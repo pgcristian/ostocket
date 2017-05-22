@@ -14,12 +14,7 @@ define ('STOCK_TICKET_VIEW', TABLE_PREFIX . 'STOCKTicketView');
 define ('STOCK_SEARCH_VIEW', TABLE_PREFIX . 'STOCKSearchView');
 define ('STOCK_FORM_VIEW', TABLE_PREFIX . 'STOCKFormView');
 
-define ('STOCK_DELETE_TRIGGER', TABLE_PREFIX . 'STOCK_ADEL');
-define ('STOCK_INSERT_TRIGGER', TABLE_PREFIX . 'STOCK_AINS');
-define ('STOCK_UPDATE_TRIGGER', TABLE_PREFIX . 'STOCK_AUPD');
-define ('STATUS_INSERT_TRIGGER', TABLE_PREFIX . 'STOCK_status_AINS');
-define ('STATUS_UPDATE_TRIGGER', TABLE_PREFIX . 'STOCK_status_AUPD');
-define ('STATUS_DELETE_TRIGGER', TABLE_PREFIX . 'STOCK_status_ADEL');
+
 
 define ('EVENT_DELETE_TRIGGER', TABLE_PREFIX . 'ticket_event_AINS');
 define ('EVENT_UPDATE_TRIGGER', TABLE_PREFIX . 'ticket_event_AUPD');
@@ -31,7 +26,7 @@ define ('CRON_PROCEEDURE', TABLE_PREFIX . 'STOCKCronProc');
 
 define ('OST_WEB_ROOT', osTicket::get_root_path ( __DIR__ ) );
 
-define ('STOCK_WEB_ROOT', OST_WEB_ROOT . 'scp/dispatcher.php/STOCK/');
+
 
 define ('OST_ROOT', INCLUDE_DIR . '../');
 
@@ -49,9 +44,30 @@ define ('STOCK_VIEWS_DIR', STOCK_PLUGIN_ROOT . 'views/');
 define ('STOCK_STAFFINC_DIR', STOCK_INCLUDE_DIR . 'staff/');
 define ('STOCK_CLIENTINC_DIR', STOCK_INCLUDE_DIR . 'client/');
 
+require_once (STOCK_VENDOR_DIR . 'autoload.php');
+spl_autoload_register ( array (
+		'STOCKPlugin',
+		'autoload' 
+) );
+
 class StockPlugin extends Plugin {
 	var $config_class = 'StockConfig';
-	
+	public static function autoload($className){
+		$className = ltrim ( $className, '\\');
+		$fileName = '';
+		$namespace = '';
+		if ($lastNsPos = strrpos ( $className, '\\')){
+			$namespace = substr ( $className, 0, $lastNsPos );
+			$className = substr ( $className, $lastNsPos + 1 );
+			$fileName = str_replace ('\\', DIRECTORY_SEPARATOR, $namespace ) . DIRECTORY_SEPARATOR;
+		}
+		$fileName .= str_replace ('_', DIRECTORY_SEPARATOR, $className ) . '.php';
+		$fileName = 'include/' . $fileName;
+		
+		if (file_exists ( STOCK_PLUGIN_ROOT . $fileName )){
+			require $fileName;
+		}
+	}
 	public static function getCustomForm(){
 		$sql = 'SELECT id FROM ' . PLUGIN_TABLE . ' WHERE name=\'STOCK Manager\'';
 		$res = db_query ( $sql );
@@ -82,6 +98,33 @@ class StockPlugin extends Plugin {
 				'StockPlugin',
 				'callbackDispatch' 
 		) );
+	}
+	static public function callbackDispatch($object, $data){
+		$search_url = url ('^/STOCK.*search', patterns ('controller\STOCKItem', url_post ('^.*', 'searchAction') ) );
+		$categories_url = url ('^/STOCK.*categories/', patterns ('controller\STOCKCategory', url_get ('^list$', 'listAction'), url_get ('^listJson$', 'listJsonAction'), url_get ('^listJsonTree$', 'listJsonTreeAction'), url_get ('^view/(?P<id>\d+)$', 'viewAction'), url_get ('^openTicketsJson/(?P<item_id>\d+)$', 'openTicketsJsonAction'), url_get ('^closedTicketsJson/(?P<item_id>\d+)$', 'closedTicketsJsonAction'), url_get ('^getItemsJson/(?P<category_id>\d+)$', 'categoryItemsJsonAction'), url_post ('^save', 'saveAction'), url_post ('^delete', 'deleteAction') ) );
+		$item_url = url ('^/STOCK.*item/', patterns ('controller\STOCKItem', url_get ('^list$', 'listAction'), url_get ('^listJson$', 'listJsonAction'), url_get ('^listBelongingJson$', 'listBelongingJsonAction'), url_get ('^listNotBelongingJson$', 'listNotBelongingJsonAction'), url_get ('^listStaffJson$', 'listStaffJsonAction'), url_get ('^view/(?P<id>\d+)$', 'viewAction'), url_get ('^new/(?P<category_id>\d+)$', 'newAction'), url_post ('^publish', 'publishAction'), url_post ('^activate', 'activateAction'), url_post ('^save', 'saveAction'), url_get ('^openTicketsJson/(?P<item_id>\d+)$', 'openTicketsJsonAction'), url_get ('^closedTicketsJson/(?P<item_id>\d+)$', 'closedTicketsJsonAction'), url_get ('^getDynamicForm/(?P<id>\d+)$', 'getDynamicForm'), url_post ('^search', 'searchAction'), url_post ('^delete', 'deleteAction'), url_post ('^openNewTicket', 'openNewTicketAction') ) );
+		$status_url = url ('^/STOCK.*status/', patterns ('controller\STOCKStatus', url_get ('^list$', 'listAction'), url_get ('^view/(?P<id>\d+)$', 'viewAction'), url_get ('^new/(?P<category_id>\d+)$', 'newAction'), url_get ('^listJson$', 'listJsonAction'), url_get ('^getItemsJson/(?P<status_id>\d+)$', 'statusItemsJsonAction'), url_post ('^save', 'saveAction'), url_post ('^delete', 'deleteAction') ) );
+		$recurring_url = url ('^/STOCK.*recurring/', patterns ('controller\TicketRecurring', url_get ('^list$', 'listAction'), url_get ('^view/(?P<id>\d+)$', 'viewAction'), url_get ('^viewByTicket/(?P<id>\d+)$', 'viewByTicketAction'), url_get ('^addByTicket/(?P<id>\d+)$', 'addByTicketAction'), url_get ('^new/(?P<category_id>\d+)$', 'newAction'), url_get ('^listJson$', 'listJsonAction'), url_get ('^getItemsJson/(?P<status_id>\d+)$', 'statusItemsJsonAction'), url_get ('^listTicketsJson$', 'listTicketsJson'), url_get ('^listSTOCKJson$', 'listSTOCKJson'), url_post ('^save', 'saveAction'), url_post ('^delete', 'deleteAction'), url_post ('^enableEvents', 'enableEventsAction') ) );
+		$maintenance_url = url ('^/STOCK.*maintenance/', patterns ('controller\Maintenance', url_get ('^startStructureTest$', 'startDatabaseIntegrityTest'), url_get ('^purgeData$', 'startDatabaseDataPurge'), url_get ('^recreateDatabase', 'startDatabaseRecreate'), url_get ('.*', 'defaultAction') ) );
+		$media_url = url ('^/STOCK.*assets/', patterns ('controller\MediaController', url_get ('^(?P<url>.*)$', 'defaultAction') ) );
+		$dashboard_url = url ('^/STOCK.*dashboard/', patterns ('controller\Dashboard', url_get ('^treeJson', 'treeJsonAction'), url_get ('.*', 'viewAction') ) );
+		$redirect_url = url ('^/STOCK.*ostroot/', patterns ('controller\MediaController', url_get ('^(?P<url>.*)$', 'redirectAction') ) );
+	}
+	function createDBTables(){
+		$installer = new \util\STOCKInstaller ();
+		return $installer->install ();
+	}
+	function configureFirstRun(){
+		if (! $this->createDBTables ()){
+			echo "Configuration error of first run.  " . "Unable create db tables";
+			return false;
+		}
+		return true;
+	}
+	function firstRun(){
+		$sql = 'SHOW TABLES LIKE \'' . STOCK_TABLE . '\'';
+		$res = db_query ( $sql );
+		return (db_num_rows ( $res ) == 0);
 	}
 
 }

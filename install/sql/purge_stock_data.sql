@@ -1,0 +1,11 @@
+SET SQL_SAFE_UPDATES=0$
+DELETE FROM `%TABLE_PREFIX%Stock`$ 
+DELETE FROM `%TABLE_PREFIX%Stock_category`$
+DELETE FROM `%TABLE_PREFIX%Stock_status`$
+DELETE FROM `%TABLE_PREFIX%Stock_ticket`$
+DELETE FROM `%TABLE_PREFIX%Stock_ticket_recurring`$
+DELETE FROM `%TABLE_PREFIX%Stock_config`$
+DELETE FROM `%TABLE_PREFIX%list` WHERE `name`='Stock_status'$ 
+DELETE FROM `%TABLE_PREFIX%list` WHERE `name`='Stock'$ 
+DELETE FROM `%TABLE_PREFIX%form` WHERE `title`='Stock'$
+SET SQL_SAFE_UPDATES=1$

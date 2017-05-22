@@ -1,0 +1,51 @@
+DROP EVENT IF EXISTS `%TABLE_PREFIX%StockCron`$
+DROP PROCEDURE IF EXISTS `%TABLE_PREFIX%StockCronProc`$
+DROP PROCEDURE IF EXISTS `%TABLE_PREFIX%Stock_Reopen_Ticket`$
+DROP PROCEDURE IF EXISTS `%TABLE_PREFIX%Stock_Copy_Form_Entry`$
+
+DROP TRIGGER IF EXISTS `%TABLE_PREFIX%ticket_event_AINS`$
+DROP TRIGGER IF EXISTS `%TABLE_PREFIX%ticket_event_AUPD`$
+DROP VIEW IF EXISTS `%TABLE_PREFIX%StockFormView`$
+DROP VIEW IF EXISTS `%TABLE_PREFIX%StockTicketView`$
+DROP VIEW IF EXISTS `%TABLE_PREFIX%StockSearchView`$
+DROP TRIGGER IF EXISTS `%TABLE_PREFIX%Stock_status_ADEL`$
+DROP TRIGGER IF EXISTS `%TABLE_PREFIX%Stock_status_AUPD`$
+DROP TRIGGER IF EXISTS `%TABLE_PREFIX%Stock_status_AINS`$
+DROP TRIGGER IF EXISTS `%TABLE_PREFIX%Stock_AUPD`$
+DROP TRIGGER IF EXISTS `%TABLE_PREFIX%Stock_AINS`$
+DROP TRIGGER IF EXISTS `%TABLE_PREFIX%Stock_ADEL`$
+DROP PROCEDURE IF EXISTS `%TABLE_PREFIX%CreateStockFormFields`$
+DROP PROCEDURE IF EXISTS `%TABLE_PREFIX%UpgradeStockFormFields`$
+DROP TABLE IF EXISTS `%TABLE_PREFIX%Stock_ticket`$
+DROP TABLE IF EXISTS `%TABLE_PREFIX%Stock_status`$
+DROP TABLE IF EXISTS `%TABLE_PREFIX%Stock_category`$
+DROP TABLE IF EXISTS `%TABLE_PREFIX%Stock`$
+DROP TABLE IF EXISTS `%TABLE_PREFIX%Stock_ticket_recurring`$
+DROP TABLE IF EXISTS `%TABLE_PREFIX%Stock_config`$
+
+
+CREATE PROCEDURE `%TABLE_PREFIX%RemoveStockFormFields`()
+BEGIN
+    SET @form_id = (SELECT id FROM `%TABLE_PREFIX%form` WHERE title='Stock');
+    SET @status_list_id = (SELECT id FROM `%TABLE_PREFIX%list` WHERE `name`='Stock_status');
+    SET @Stock_list_id = (SELECT id FROM `%TABLE_PREFIX%list` WHERE `name`='Stock');
+
+    DELETE FROM `%TABLE_PREFIX%list_items` WHERE list_id = @status_list_id;
+    DELETE FROM `%TABLE_PREFIX%list_items` WHERE list_id = @Stock_list_id;
+
+    DELETE FROM `%TABLE_PREFIX%list` WHERE id = @status_list_id;
+    DELETE FROM `%TABLE_PREFIX%list` WHERE id = @Stock_list_id;
+
+    DELETE FROM `%TABLE_PREFIX%form_entry` WHERE form_id = @form_id;
+    DELETE FROM `%TABLE_PREFIX%form_field` WHERE form_id = @form_id;
+
+    DELETE FROM `%TABLE_PREFIX%form` WHERE id = @form_id;
+END$
+
+CALL `%TABLE_PREFIX%RemoveStockFormFields`$
+DROP PROCEDURE IF EXISTS `%TABLE_PREFIX%RemoveStockFormFields`$
+DROP PROCEDURE IF EXISTS `%TABLE_PREFIX%update_version`$
+
+
+
+
