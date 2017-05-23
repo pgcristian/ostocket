@@ -1,6 +1,12 @@
 <?php
 
 require_once ('config.php');
+require_once (INCLUDE_DIR . 'class.plugin.php');
+require_once (INCLUDE_DIR . 'class.signal.php');
+require_once (INCLUDE_DIR . 'class.app.php');
+require_once (INCLUDE_DIR . 'class.dispatcher.php');
+require_once (INCLUDE_DIR . 'class.dynamic_forms.php');
+require_once (INCLUDE_DIR . 'class.osticket.php');
 
 define ('STOCK_PLUGIN_VERSION', '0.1');
 
@@ -13,9 +19,12 @@ define ('STOCK_TICKET_RECURRING__TABLE', TABLE_PREFIX . 'STOCK_ticket_recurring'
 define ('STOCK_TICKET_VIEW', TABLE_PREFIX . 'STOCKTicketView');
 define ('STOCK_SEARCH_VIEW', TABLE_PREFIX . 'STOCKSearchView');
 define ('STOCK_FORM_VIEW', TABLE_PREFIX . 'STOCKFormView');
-
-
-
+define ('STOCK_DELETE_TRIGGER', TABLE_PREFIX . 'STOCK_ADEL');
+define ('STOCK_INSERT_TRIGGER', TABLE_PREFIX . 'STOCK_AINS');
+define ('STOCK_UPDATE_TRIGGER', TABLE_PREFIX . 'STOCK_AUPD');
+define ('STATUS_INSERT_TRIGGER', TABLE_PREFIX . 'STOCK_status_AINS');
+define ('STATUS_UPDATE_TRIGGER', TABLE_PREFIX . 'STOCK_status_AUPD');
+define ('STATUS_DELETE_TRIGGER', TABLE_PREFIX . 'STOCK_status_ADEL');
 define ('EVENT_DELETE_TRIGGER', TABLE_PREFIX . 'ticket_event_AINS');
 define ('EVENT_UPDATE_TRIGGER', TABLE_PREFIX . 'ticket_event_AUPD');
 
@@ -25,9 +34,7 @@ define ('REOPEN_TICKET_PROCEEDURE', TABLE_PREFIX . 'STOCK_Reopen_Ticket');
 define ('CRON_PROCEEDURE', TABLE_PREFIX . 'STOCKCronProc');
 
 define ('OST_WEB_ROOT', osTicket::get_root_path ( __DIR__ ) );
-
-
-
+define ('STOCK_WEB_ROOT', OST_WEB_ROOT . 'scp/dispatcher.php/STOCK/');
 define ('OST_ROOT', INCLUDE_DIR . '../');
 
 define ('PLUGINS_ROOT', INCLUDE_DIR . 'plugins/');
@@ -109,6 +116,28 @@ class StockPlugin extends Plugin {
 		$media_url = url ('^/STOCK.*assets/', patterns ('controller\MediaController', url_get ('^(?P<url>.*)$', 'defaultAction') ) );
 		$dashboard_url = url ('^/STOCK.*dashboard/', patterns ('controller\Dashboard', url_get ('^treeJson', 'treeJsonAction'), url_get ('.*', 'viewAction') ) );
 		$redirect_url = url ('^/STOCK.*ostroot/', patterns ('controller\MediaController', url_get ('^(?P<url>.*)$', 'redirectAction') ) );
+		$object->append ( $search_url );
+		$object->append ( $media_url );
+		$object->append ( $redirect_url );
+		$object->append ( $maintenance_url );
+		$object->append ( $dashboard_url );
+		$object->append ( $categories_url );
+		$object->append ( $item_url );
+		$object->append ( $status_url );
+		$object->append ( $recurring_url );
+	}
+	function needUpgrade(){
+		$sql = 'SELECT version FROM ' . PLUGIN_TABLE . ' WHERE name=\'STOCK Manager\'';
+		
+		if (! ($res = db_query ( $sql ))){
+			return true;
+		} else{
+			$ht = db_fetch_array ( $res );
+			if (floatval ( $ht ['version'] ) < floatval ( STOCK_PLUGIN_VERSION )){
+				return true;
+			}
+		}
+		return false;
 	}
 	function createDBTables(){
 		$installer = new \util\STOCKInstaller ();
@@ -121,10 +150,30 @@ class StockPlugin extends Plugin {
 		}
 		return true;
 	}
+	function createStaffMenu(){
+		Application::registerStaffApp ('STOCK', 'dispatcher.php/STOCK/dashboard/', array (
+				iconclass => 'faq-categories' 
+		) );
+	}
+	function createFrontMenu(){
+		Application::registerClientApp ('STOCK Status', 'STOCK_front/index.php', array (
+				iconclass => 'STOCK' 
+		) );
+	}
+	function configureUpgrade(){
+		$installer = new \util\STOCKInstaller ();
+		
+		if (! $installer->upgrade ()){
+			echo "Upgrade configuration error. " . "Unable to upgrade database tables!";
+		}
+	}
 	function firstRun(){
 		$sql = 'SHOW TABLES LIKE \'' . STOCK_TABLE . '\'';
 		$res = db_query ( $sql );
 		return (db_num_rows ( $res ) == 0);
 	}
-
+	function pre_uninstall(&$errors){
+		$installer = new \util\STOCKInstaller ();
+		return $installer->remove ();
+	}
 }

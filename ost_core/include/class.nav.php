@@ -1,5 +1,5 @@
 <?php
-
+require_once(INCLUDE_DIR . 'class.app.php');
 class StaffNav {
     var $activetab;
     var $activeMenu;
@@ -165,3 +165,178 @@ class StaffNav {
         return $this->getSubMenu($tab);
     }
 }
+class AdminNav extends StaffNav {
+    function AdminNav($staff) {
+        parent::StaffNav($staff,
+                'admin');
+    }
+    function getRegisteredApps() {
+        return Application::getAdminApps();
+    }
+    function getTabs() {
+        if (!$this->tabs) {
+            $tabs = array();
+            $tabs['dashboard'] = array('desc' => __('Dashboard'), 'href' => 'logs.php',
+                'title' => __('Admin Dashboard'));
+            $tabs['settings'] = array('desc' => __('Settings'), 'href' => 'settings.php',
+                'title' => __('System Settings'));
+            $tabs['manage'] = array('desc' => __('Manage'), 'href' => 'helptopics.php',
+                'title' => __('Manage Options'));
+            $tabs['emails'] = array('desc' => __('Emails'), 'href' => 'emails.php',
+                'title' => __('Email Settings'));
+            $tabs['staff'] = array('desc' => __('Agents'), 'href' => 'staff.php',
+                'title' => __('Manage Agents'));
+            if (count($this->getRegisteredApps()))
+                $tabs['apps'] = array('desc' => __('Applications'), 'href' => 'apps.php',
+                    'title' => __('Applications'));
+            $this->tabs = $tabs;
+        }
+        return $this->tabs;
+    }
+    function getSubMenus() {
+        $submenus = array();
+        foreach ($this->getTabs() as $k => $tab) {
+            $subnav = array();
+            switch (strtolower($k)) {
+                case 'dashboard':
+                    $subnav[] = array('desc' => __('System Logs'), 'href' => 'logs.php',
+                        'iconclass' => 'logs');
+                    $subnav[] = array('desc' => __('Information'), 'href' => 'system.php',
+                        'iconclass' => 'preferences');
+                    break;
+                case 'settings':
+                    $subnav[] = array('desc' => __('Company'), 'href' => 'settings.php?t=pages',
+                        'iconclass' => 'pages');
+                    $subnav[] = array('desc' => __('System'), 'href' => 'settings.php?t=system',
+                        'iconclass' => 'preferences');
+                    $subnav[] = array('desc' => __('Tickets'), 'href' => 'settings.php?t=tickets',
+                        'iconclass' => 'ticket-settings');
+                    $subnav[] = array('desc' => __('Emails'), 'href' => 'settings.php?t=emails',
+                        'iconclass' => 'email-settings');
+                    $subnav[] = array('desc' => __('Access'), 'href' => 'settings.php?t=access',
+                        'iconclass' => 'users');
+                    $subnav[] = array('desc' => __('Knowledgebase'), 'href' => 'settings.php?t=kb',
+                        'iconclass' => 'kb-settings');
+                    $subnav[] = array('desc' => __('Autoresponder'), 'href' => 'settings.php?t=autoresp',
+                        'iconclass' => 'email-autoresponders');
+                    $subnav[] = array('desc' => __('Alerts and Notices'), 'href' => 'settings.php?t=alerts',
+                        'iconclass' => 'alert-settings');
+                    break;
+                case 'manage':
+                    $subnav[] = array('desc' => __('Help Topics'), 'href' => 'helptopics.php',
+                        'iconclass' => 'helpTopics');
+                    $subnav[] = array('desc' => __('Ticket Filters'), 'href' => 'filters.php',
+                        'title' => __('Ticket Filters'), 'iconclass' => 'ticketFilters');
+                    $subnav[] = array('desc' => __('SLA Plans'), 'href' => 'slas.php',
+                        'iconclass' => 'sla');
+                    $subnav[] = array('desc' => __('API Keys'), 'href' => 'apikeys.php',
+                        'iconclass' => 'api');
+                    $subnav[] = array('desc' => __('Pages'), 'href' => 'pages.php',
+                        'title' => 'Pages', 'iconclass' => 'pages');
+                    $subnav[] = array('desc' => __('Forms'), 'href' => 'forms.php',
+                        'iconclass' => 'forms');
+                    $subnav[] = array('desc' => __('Lists'), 'href' => 'lists.php',
+                        'iconclass' => 'lists');
+                    $subnav[] = array('desc' => __('Plugins'), 'href' => 'plugins.php',
+                        'iconclass' => 'api');
+                    break;
+                case 'emails':
+                    $subnav[] = array('desc' => __('Emails'), 'href' => 'emails.php',
+                        'title' => __('Email Addresses'), 'iconclass' => 'emailSettings');
+                    $subnav[] = array('desc' => __('Banlist'), 'href' => 'banlist.php',
+                        'title' => __('Banned Emails'), 'iconclass' => 'emailDiagnostic');
+                    $subnav[] = array('desc' => __('Templates'), 'href' => 'templates.php',
+                        'title' => __('Email Templates'), 'iconclass' => 'emailTemplates');
+                    $subnav[] = array('desc' => __('Diagnostic'), 'href' => 'emailtest.php',
+                        'title' => __('Email Diagnostic'), 'iconclass' => 'emailDiagnostic');
+                    break;
+                case 'staff':
+                    $subnav[] = array('desc' => __('Agents'), 'href' => 'staff.php',
+                        'iconclass' => 'users');
+                    $subnav[] = array('desc' => __('Teams'), 'href' => 'teams.php',
+                        'iconclass' => 'teams');
+                    $subnav[] = array('desc' => __('Groups'), 'href' => 'groups.php',
+                        'iconclass' => 'groups');
+                    $subnav[] = array('desc' => __('Departments'), 'href' => 'departments.php',
+                        'iconclass' => 'departments');
+                    break;
+                case 'apps':
+                    foreach ($this->getRegisteredApps() as $app)
+                        $subnav[] = $app;
+                    break;
+            }
+            if ($subnav)
+                $submenus[$this->getPanel() . '.' . strtolower($k)] = $subnav;
+        }
+        return $submenus;
+    }
+}
+class UserNav {
+    var $navs = array();
+    var $activenav;
+    var $user;
+    function UserNav($user = null, $active = '') {
+
+        $this->user = $user;
+        $this->navs = $this->getNavs();
+        if ($active)
+            $this->setActiveNav($active);
+    }
+    function getRegisteredApps() {
+        return Application::getClientApps();
+    }
+    function setActiveNav($nav) {
+
+        if ($nav && $this->navs[$nav]) {
+            $this->navs[$nav]['active'] = true;
+            if ($this->activenav && $this->activenav != $nav && $this->navs[$this->activenav])
+                $this->navs[$this->activenav]['active'] = false;
+
+            $this->activenav = $nav;
+
+            return true;
+        }
+
+        return false;
+    }
+    function getNavLinks() {
+        global $cfg;
+        if (!$this->navs) {
+
+            $navs = array();
+            $user = $this->user;
+            $navs['home'] = array('desc' => __('Support Center Home'), 'href' => 'index.php',
+                'title' => '');
+            if ($cfg && $cfg->isKnowledgebaseEnabled())
+                $navs['kb'] = array('desc' => __('Knowledgebase'), 'href' => 'kb/index.php',
+                    'title' => '');
+            if ($cfg->getClientRegistrationMode() != 'disabled' || !$cfg->isClientLoginRequired())
+                $navs['new'] = array('desc' => __('Open a New Ticket'), 'href' => 'open.php',
+                    'title' => '');
+            if ($user && $user->isValid()) {
+                if (!$user->isGuest()) {
+                    $navs['tickets'] = array('desc' => sprintf(__('Tickets (%d)'),
+                                $user->getNumTickets()),
+                        'href' => 'tickets.php',
+                        'title' => __('Show all tickets'));
+                } else {
+                    $navs['tickets'] = array('desc' => __('View Ticket Thread'),
+                        'href' => sprintf('tickets.php?id=%d',
+                                $user->getTicketId()),
+                        'title' => __('View ticket status'));
+                }
+            } else {
+                $navs['status'] = array('desc' => __('Check Ticket Status'), 'href' => 'view.php',
+                    'title' => '');
+            }
+            foreach ($this->getRegisteredApps() as $app)
+                $navs[] = $app;
+            $this->navs = $navs;
+        }
+        return $this->navs;
+    }
+    function getNavs() {
+        return $this->getNavLinks();
+    }
+}
+?>
